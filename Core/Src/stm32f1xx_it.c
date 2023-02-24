@@ -22,6 +22,8 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "I2C/MyI2C.h"
+#include "Move.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,7 +59,13 @@
 /* External variables --------------------------------------------------------*/
 
 /* USER CODE BEGIN EV */
+extern volatile uint32_t mainTick;
+extern volatile uint32_t PeripheralRequest;
+extern volatile uint8_t stopEmrgFront;
 
+extern I2C_Connection_t I2C1_Bus;
+extern I2C_Connection_t I2C2_Bus;
+extern robot_t bot;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -187,7 +195,16 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
 
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+	++mainTick;
+	if (mainTick % LASER_POOL_PERIOD == 0) {
+		requestOn(PeripheralRequest, LIDAR_REQUEST_MASK);
+	}
+	if (mainTick % PACH_CALC_PERIOD == 0) {
+		requestOn(PeripheralRequest, PACH_CALC_MASK);
+	}
+	if (mainTick % PID_CALC_PERIOD == 0) {
+		requestOn(PeripheralRequest, PID_CALC_MASK);
+	}
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -207,7 +224,34 @@ void TIM2_IRQHandler(void)
 
   /* USER CODE END TIM2_IRQn 0 */
   /* USER CODE BEGIN TIM2_IRQn 1 */
-
+	volatile uint32_t sr = LL_TIM_ReadReg(TIM2, SR);
+		if (sr & LL_TIM_SR_UIF) {
+			//if (++bot.wheelLeft.timeout < 100) {//OK
+				bot.wheelLeft.dec += 1;
+				rpsCalc(&bot.wheelLeft, TIM2, 1, 4, 20);
+			/*} else {//timeout
+				bot.wheelLeft.dec = 0;
+				bot.wheelLeft.freq = 0;
+				bot.wheelLeft.pulseNum = 0;
+			}*/
+			//if (++bot.wheelRight.timeout < 100) {//OK
+				bot.wheelRight.dec += 1;
+				rpsCalc(&bot.wheelRight, TIM2, 2, 4, 20);
+			/*} else {//timeout
+				bot.wheelRight.dec = 0;
+				bot.wheelRight.freq = 0;
+				bot.wheelRight.pulseNum = 0;
+			}*/
+			LL_TIM_ClearFlag_UPDATE(TIM2);
+		}
+		if (sr & LL_TIM_SR_CC1IF) {
+			bot.wheelLeft.pulseNum += 1;
+			LL_TIM_ClearFlag_CC1(TIM2);
+		}
+		if (sr & LL_TIM_SR_CC2IF) {
+			bot.wheelRight.pulseNum += 1;
+			LL_TIM_ClearFlag_CC2(TIM2);
+		}
   /* USER CODE END TIM2_IRQn 1 */
 }
 
@@ -221,7 +265,7 @@ void I2C1_EV_IRQHandler(void)
   /* USER CODE END I2C1_EV_IRQn 0 */
 
   /* USER CODE BEGIN I2C1_EV_IRQn 1 */
-
+	//I2C_Raw_IRQ_CallBack(&I2C1_Bus);
   /* USER CODE END I2C1_EV_IRQn 1 */
 }
 
@@ -235,7 +279,7 @@ void I2C1_ER_IRQHandler(void)
   /* USER CODE END I2C1_ER_IRQn 0 */
 
   /* USER CODE BEGIN I2C1_ER_IRQn 1 */
-
+	//I2C_ERR_IRQ_CallBack(&I2C1_Bus);
   /* USER CODE END I2C1_ER_IRQn 1 */
 }
 
@@ -249,7 +293,7 @@ void I2C2_EV_IRQHandler(void)
   /* USER CODE END I2C2_EV_IRQn 0 */
 
   /* USER CODE BEGIN I2C2_EV_IRQn 1 */
-
+	//I2C_Raw_IRQ_CallBack(&I2C2_Bus);
   /* USER CODE END I2C2_EV_IRQn 1 */
 }
 
@@ -263,7 +307,7 @@ void I2C2_ER_IRQHandler(void)
   /* USER CODE END I2C2_ER_IRQn 0 */
 
   /* USER CODE BEGIN I2C2_ER_IRQn 1 */
-
+	//I2C_ERR_IRQ_CallBack(&I2C2_Bus);
   /* USER CODE END I2C2_ER_IRQn 1 */
 }
 
@@ -279,7 +323,7 @@ void EXTI15_10_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_12);
     /* USER CODE BEGIN LL_EXTI_LINE_12 */
-
+    //stopEmrgFront = 1;
     /* USER CODE END LL_EXTI_LINE_12 */
   }
   /* USER CODE BEGIN EXTI15_10_IRQn 1 */

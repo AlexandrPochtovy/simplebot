@@ -30,4 +30,21 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Common</name>
+			<type>2</type>
+			<location>D:/STM32/LIBRARY/Common</location>
+		</link>
+		<link>
+			<name>Devices</name>
+			<type>2</type>
+			<location>D:/STM32/LIBRARY/Devices</location>
+		</link>
+		<link>
+			<name>Interfaces</name>
+			<type>2</type>
+			<location>D:/STM32/LIBRARY/F1xx/Interfaces</location>
+		</link>
+	</linkedResources>
 </projectDescription>
