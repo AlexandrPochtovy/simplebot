@@ -104,9 +104,9 @@ void Error_Handler(void);
 #endif
 
 /* USER CODE BEGIN Private defines */
-#define LIMIT 				100  	// предельное раccто�?ние до преп�?т�?тви�?, мм
+#define LIMIT 							200  	// предельное раccто�?ние до преп�?т�?тви�?, мм
 #define USART_POOL_PERIOD 	50		//usart period check data, msec
-#define LASER_POOL_PERIOD 	15		//laser range sensor read data, msec
+#define LASER_POOL_PERIOD 	30		//laser range sensor read data, msec
 #define IMU_POOL_PERIOD			20		//imu sensors (accel, gyro mag) read data, msec
 #define PACH_CALC_PERIOD		5			//trajectory calculate period
 #define PID_CALC_PERIOD			10		//PID calculate period

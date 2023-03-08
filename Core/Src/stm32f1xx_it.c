@@ -62,6 +62,7 @@
 extern volatile uint32_t mainTick;
 extern volatile uint32_t PeripheralRequest;
 extern volatile uint8_t stopEmrgFront;
+extern volatile uint32_t pool;
 
 extern I2C_Connection_t I2C1_Bus;
 extern I2C_Connection_t I2C2_Bus;
@@ -196,7 +197,8 @@ void SysTick_Handler(void)
 
   /* USER CODE BEGIN SysTick_IRQn 1 */
 	++mainTick;
-	if (mainTick % LASER_POOL_PERIOD == 0) {
+	//if (mainTick % LASER_POOL_PERIOD == 0) {
+	if (mainTick % pool == 0) {
 		requestOn(PeripheralRequest, LIDAR_REQUEST_MASK);
 	}
 	if (mainTick % PACH_CALC_PERIOD == 0) {
@@ -265,7 +267,7 @@ void I2C1_EV_IRQHandler(void)
   /* USER CODE END I2C1_EV_IRQn 0 */
 
   /* USER CODE BEGIN I2C1_EV_IRQn 1 */
-	//I2C_Raw_IRQ_CallBack(&I2C1_Bus);
+	I2C_Raw_IRQ_CallBack(&I2C1_Bus);
   /* USER CODE END I2C1_EV_IRQn 1 */
 }
 
@@ -279,7 +281,7 @@ void I2C1_ER_IRQHandler(void)
   /* USER CODE END I2C1_ER_IRQn 0 */
 
   /* USER CODE BEGIN I2C1_ER_IRQn 1 */
-	//I2C_ERR_IRQ_CallBack(&I2C1_Bus);
+	I2C_ERR_IRQ_CallBack(&I2C1_Bus);
   /* USER CODE END I2C1_ER_IRQn 1 */
 }
 
@@ -293,7 +295,7 @@ void I2C2_EV_IRQHandler(void)
   /* USER CODE END I2C2_EV_IRQn 0 */
 
   /* USER CODE BEGIN I2C2_EV_IRQn 1 */
-	//I2C_Raw_IRQ_CallBack(&I2C2_Bus);
+	I2C_Raw_IRQ_CallBack(&I2C2_Bus);
   /* USER CODE END I2C2_EV_IRQn 1 */
 }
 
@@ -307,7 +309,7 @@ void I2C2_ER_IRQHandler(void)
   /* USER CODE END I2C2_ER_IRQn 0 */
 
   /* USER CODE BEGIN I2C2_ER_IRQn 1 */
-	//I2C_ERR_IRQ_CallBack(&I2C2_Bus);
+	I2C_ERR_IRQ_CallBack(&I2C2_Bus);
   /* USER CODE END I2C2_ER_IRQn 1 */
 }
 

@@ -52,6 +52,7 @@
 /* USER CODE BEGIN PV */
 //TIME
 volatile uint32_t mainTick = 0;
+volatile uint32_t pool = 100;
 uint32_t cycleTime;
 uint32_t previousTime = 0;
 uint32_t dt = 0;
@@ -100,6 +101,12 @@ point_t target = {1.0, 1.0};
 //PID
 pidData_t pidLeft;
 pidData_t pidRight;
+
+//distance
+uint16_t lms_int;
+uint16_t rms_int;
+uint16_t distL_mm;  //ра�?�?то�?ние �?лева по�?ле фильтрации, мм
+uint16_t distR_mm;  //ра�?�?то�?ние �?права по�?ле фильтрации, мм
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -153,17 +160,20 @@ int main(void)
   MX_TIM4_Init();
   MX_I2C1_Init();
   MX_I2C2_Init();
+  //MY_I2C1_Init();
+  //MY_I2C2_Init();
   /* USER CODE BEGIN 2 */
 	SysTick_Config(SystemCoreClock / 1000);  //1ms tick
 	LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
-	setupVL53L0X(&LidarLeft, 100);
-	setupVL53L0X(&LidarRight, 100);
+	setupVL53L0X(&LidarLeft, 20);
+	setupVL53L0X(&LidarRight, 20);
 	previousTime = mainTick;
 
 	pid_Init(14, 6, 2, &pidLeft);
 	pid_Init(14, 6, 2, &pidRight);
 	//DWT_Init();
-
+	uint8_t stl = 0;
+	uint8_t str = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -171,52 +181,52 @@ int main(void)
   while (1)
   {
   	//DWT_Meas(&cycleTime);
-		if (PeripheralRequest && LIDAR_REQUEST_MASK) {
-			uint8_t st;
+  	if (PeripheralRequest & LIDAR_REQUEST_MASK) {
 			switch (laserStep) {
 			case 0:
-				st = VL_Init(&I2C1_Bus, &LidarLeft);
-				if (st) {
+				while (str == 0) {
+					str = VL_Init(&I2C1_Bus, &LidarRight);
+					rms_int = distCalc(&LidarRight, LIMIT);
+				}
+				while (stl == 0) {
+					stl = VL_Init(&I2C2_Bus, &LidarLeft);
+					lms_int = distCalc(&LidarLeft, LIMIT);
+				}
+				if ((stl == 1) && (str == 1)) {
 					requestOff(PeripheralRequest, LIDAR_REQUEST_MASK);
 					laserStep = 1;
 				}
 				break;
 			case 1:
-				st = VL_Init(&I2C2_Bus, &LidarRight);
-				if (st) {
-					requestOff(PeripheralRequest, LIDAR_REQUEST_MASK);
-					laserStep = 2;
+				while (stl == 0) {
+					stl = readRangeSingleMillimeters(&I2C2_Bus, &LidarLeft);
 				}
-				break;
-			case 2:
-				st = readRangeSingleMillimeters(&I2C1_Bus, &LidarLeft);
-				if (st) {
-					requestOff(PeripheralRequest, LIDAR_REQUEST_MASK);
-					if (LidarLeft.status == FAULTH) {
-						laserStep = 0;
-					}
-					else {
-						laserStep = 3;
-					}
+				while (str == 0) {
+					str = readRangeSingleMillimeters(&I2C1_Bus, &LidarRight);
 				}
-				break;
-			case 3:
-				st = readRangeSingleMillimeters(&I2C2_Bus, &LidarRight);
-				if (st) {
+				if ((stl == 1) && (str == 1)) {
+					requestOff(PeripheralRequest, LIDAR_REQUEST_MASK);
 					LL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-					requestOff(PeripheralRequest, LIDAR_REQUEST_MASK);
-					if (LidarRight.status == FAULTH) {
-						laserStep = 0;
-					}
-					else {
-						laserStep = 2;
-					}
+					str = 0; stl = 0;
 				}
 				break;
 			default:
 				laserStep = 0;
 				break;
 			}
+		}
+
+		if (PeripheralRequest & PACH_CALC_MASK) {
+			dt = mainTick - previousTime;
+			previousTime = mainTick;
+			distL_mm = alphabeta(distL_mm, lms_int, 16);
+			distR_mm = alphabeta(distR_mm, rms_int, 16);
+			uint8_t mvst= MoveDrive(&bot, dt, target, distL_mm, distR_mm, wall);
+			if (mvst) {
+				target.x = 1.0f * rand() / RAND_MAX + 0.5;
+				target.y = 1.0f * rand() / RAND_MAX + 0.5;
+			}
+			requestOff(PeripheralRequest, PACH_CALC_MASK);
 		}
 
 
